@@ -3,7 +3,10 @@ package com.udacity.sandwichclub;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
@@ -15,6 +18,11 @@ public class DetailActivity extends AppCompatActivity {
     public static final String EXTRA_POSITION = "extra_position";
     private static final int DEFAULT_POSITION = -1;
 
+    private TextView mAlsoKnown;
+    private TextView mIngredients;
+    private TextView mDescription;
+    private TextView mOrigin;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -22,9 +30,16 @@ public class DetailActivity extends AppCompatActivity {
 
         ImageView ingredientsIv = findViewById(R.id.image_iv);
 
+        mAlsoKnown = findViewById(R.id.also_known_tv);
+        mIngredients = findViewById(R.id.ingredients_tv);
+        mDescription = findViewById(R.id.description_tv);
+        mOrigin = findViewById(R.id.origin_tv);
+
+
         Intent intent = getIntent();
         if (intent == null) {
             closeOnError();
+            return;     // won't be reached, just to dismiss NullPointerException warning below
         }
 
         int position = intent.getIntExtra(EXTRA_POSITION, DEFAULT_POSITION);
@@ -37,18 +52,19 @@ public class DetailActivity extends AppCompatActivity {
         String[] sandwiches = getResources().getStringArray(R.array.sandwich_details);
         String json = sandwiches[position];
         Sandwich sandwich = JsonUtils.parseSandwichJson(json);
-        if (sandwich == null) {
+        /*if (sandwich == null) {
             // Sandwich data unavailable
             closeOnError();
             return;
-        }
+        }*/
 
-        populateUI();
+        populateUI(sandwich);
         Picasso.with(this)
                 .load(sandwich.getImage())
                 .into(ingredientsIv);
 
         setTitle(sandwich.getMainName());
+
     }
 
     private void closeOnError() {
@@ -56,7 +72,43 @@ public class DetailActivity extends AppCompatActivity {
         Toast.makeText(this, R.string.detail_error_message, Toast.LENGTH_SHORT).show();
     }
 
-    private void populateUI() {
+    private void populateUI(Sandwich sandwich) {
+        int len = sandwich.getAlsoKnownAs().size();
+        if (len > 0) {
+            StringBuilder alsoKnownString = new StringBuilder();
+            for (int i = 0; i < len; i++) {
+                if (i > 0) alsoKnownString.append(", ");
+                alsoKnownString.append(sandwich.getAlsoKnownAs().toArray()[i]);
+            }
+            mAlsoKnown.setText(alsoKnownString.toString());
+        } else {
+            findViewById(R.id.also_known_ll).setVisibility(View.GONE);
+        }
 
+        len = sandwich.getIngredients().size();
+        if (len > 0) {
+            StringBuilder ingredientsString = new StringBuilder();
+            for (int i = 0; i < len; i++) {
+                if (i > 0) ingredientsString.append(", ");
+                ingredientsString.append(sandwich.getIngredients().toArray()[i]);
+            }
+            mIngredients.setText(ingredientsString.toString());
+        } else {
+            findViewById(R.id.ingredients_ll).setVisibility(View.GONE);
+        }
+
+        String description = sandwich.getDescription();
+        if (TextUtils.isEmpty(description)) {
+            findViewById(R.id.description_ll).setVisibility(View.GONE);
+        } else {
+            mDescription.setText(description);
+        }
+
+        String origin = sandwich.getPlaceOfOrigin();
+        if (TextUtils.isEmpty(origin)) {
+            findViewById(R.id.origin_ll).setVisibility(View.GONE);
+        } else {
+            mOrigin.setText(origin);
+        }
     }
 }
